@@ -1,0 +1,21 @@
+[project]
+name = "psp-patient-journey-lakehouse"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "black>=25.12.0",
+    "dbt-core>=1.11.2",
+    "dbt-duckdb>=1.10.0",
+    "delta-spark>=3.2.0",
+    "faker>=40.1.2",
+    "great-expectations>=1.11.2",
+    "numpy>=2.4.1",
+    "pandas>=2.3.3",
+    "plotly>=6.5.2",
+    "pyspark==3.5.0",
+    "pytest>=9.0.2",
+    "ruff>=0.14.14",
+    "streamlit>=1.53.1",
+]
