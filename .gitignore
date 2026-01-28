@@ -15,5 +15,5 @@ dbt/dbt_packages/
 dbt/logs/
 
 # Data
-data/raw/*
+data/
 !data/raw_samples/
