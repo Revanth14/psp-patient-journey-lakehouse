@@ -1,0 +1,239 @@
+project:
+  name: psp-patient-journey-lakehouse
+  timezone: UTC
+  random_seed: 42
+
+# ========================================
+# SCALE PRESETS
+# ========================================
+scales:
+  dev:
+    label: "Development (Fast iteration)"
+    enrollments: 5000
+    years_of_data: 1
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+
+  demo:
+    label: "Demo "
+    enrollments: 25000
+    years_of_data: 2
+    start_date: "2023-01-01"
+    end_date: "2024-12-31"
+
+  prod:
+    label: "Production-scale (Stress test)"
+    enrollments: 100000
+    years_of_data: 3
+    start_date: "2022-01-01"
+    end_date: "2024-12-31"
+
+# Active scale (change this to switch between dev/demo/prod)
+active_scale: prod
+
+# ========================================
+# FUNNEL RATES
+# ========================================
+funnel_rates:
+  bv_completion: 0.85 # 85% complete BV
+  pa_submission: 0.70 # 70% submit PA
+  pa_approval: 0.80 # 80% of PAs approved
+  first_shipment: 0.45 # 45% receive shipment
+  abandonment_30d: 0.35 # ~35% abandon
+
+# ========================================
+# VOLUME MULTIPLIERS
+# ========================================
+multipliers:
+  # Phase 1 (MVP)
+  status_changes_per_case: 5
+  claims_per_patient_year: 2.5
+  shipments_per_shipped_patient: 25 # Over full period
+
+  # Phase 2 (Enhancements)
+  communications_per_enrollment: 4
+  crm_interactions_per_enrollment: 1.5
+  marketing_events_per_enrollment: 5
+  copay_uses_per_year: 8
+
+# ========================================
+# DIMENSIONS WITH DISTRIBUTIONS
+# ========================================
+dimensions:
+  channels:
+    - { name: hub, weight: 0.60 }
+    - { name: web, weight: 0.22 }
+    - { name: field, weight: 0.13 }
+    - { name: call_center, weight: 0.05 }
+
+  hub_vendors:
+    - { name: Eversana, weight: 0.50 }
+    - { name: IQVIA, weight: 0.35 }
+    - { name: CoverMyMeds, weight: 0.15 }
+
+  program_types:
+    - { name: copay, weight: 0.50 }
+    - { name: bridge, weight: 0.25 }
+    - { name: free_trial, weight: 0.15 }
+    - { name: PAP, weight: 0.10 }
+
+  products:
+    - {
+        product_id: YORV-001,
+        product_name: YORVIPATH,
+        indication: Hypoparathyroidism,
+        ndc: "12345-678-90",
+        weight: 0.40,
+      }
+    - {
+        product_id: SKYT-001,
+        product_name: SKYTROFA,
+        indication: "Growth Hormone Deficiency",
+        ndc: "98765-432-10",
+        weight: 0.35,
+      }
+    - {
+        product_id: TRAN-001,
+        product_name: TRANSCON,
+        indication: Achondroplasia,
+        ndc: "55555-111-22",
+        weight: 0.25,
+      }
+
+  payers:
+    # Top 5 payers (70% concentration)
+    - {
+        payer_id: UHC-001,
+        payer_name: UnitedHealthcare,
+        tier: top5,
+        weight: 0.18,
+      }
+    - { payer_id: AETN-001, payer_name: Aetna, tier: top5, weight: 0.16 }
+    - {
+        payer_id: ELEV-001,
+        payer_name: "Elevance Health",
+        tier: top5,
+        weight: 0.14,
+      } # ⭐ ADDED
+    - {
+        payer_id: BCBS-001,
+        payer_name: "Blue Cross Blue Shield",
+        tier: top5,
+        weight: 0.12,
+      }
+    - { payer_id: CIGNA-001, payer_name: Cigna, tier: top5, weight: 0.10 }
+
+    # Mid-tier payers (20%)
+    - { payer_id: HUM-001, payer_name: Humana, tier: mid, weight: 0.07 }
+    - { payer_id: ANTH-001, payer_name: Anthem, tier: mid, weight: 0.05 } # Note: Anthem is now part of Elevance
+    - { payer_id: CENT-001, payer_name: Centene, tier: mid, weight: 0.05 }
+    - {
+        payer_id: KAIS-001,
+        payer_name: "Kaiser Permanente",
+        tier: mid,
+        weight: 0.04,
+      }
+    - {
+        payer_id: MOLI-001,
+        payer_name: "Molina Healthcare",
+        tier: mid,
+        weight: 0.04,
+      }
+
+    # Long-tail payers (10%)
+    - { payer_id: WELL-001, payer_name: WellCare, tier: longtail, weight: 0.03 }
+    - {
+        payer_id: OTHER-001,
+        payer_name: "Other Payers",
+        tier: longtail,
+        weight: 0.07,
+      }
+
+  plan_types:
+    - { name: COMMERCIAL, weight: 0.65 }
+    - { name: MEDICARE, weight: 0.20 }
+    - { name: MEDICAID, weight: 0.10 }
+    - { name: CASH_PAY, weight: 0.05 }
+
+  prescriber_specialties:
+    - { name: Endocrinology, weight: 0.35 }
+    - { name: Pediatrics, weight: 0.25 }
+    - { name: "Internal Medicine", weight: 0.20 }
+    - { name: "Family Practice", weight: 0.12 }
+    - { name: Rheumatology, weight: 0.05 }
+    - { name: Other, weight: 0.03 }
+
+# ========================================
+# TIMING DISTRIBUTIONS (days)
+# ========================================
+timing:
+  # Enrollment → BV
+  bv_initiation: { min: 0, max: 3, mean: 1 }
+  bv_completion: { min: 1, max: 10, mean: 4 }
+
+  # BV → PA
+  pa_submission_after_bv: { min: 0, max: 7, mean: 2 }
+
+  # PA turnaround
+  pa_decision: { min: 1, max: 21, mean: 7 }
+
+  # PA → Shipment
+  shipment_after_pa_approval: { min: 2, max: 14, mean: 6 }
+
+  # Refills
+  refill_cadence:
+    - { days_supply: 28, weight: 0.40 }
+    - { days_supply: 30, weight: 0.50 }
+    - { days_supply: 90, weight: 0.10 }
+
+# ========================================
+# DATA QUALITY (Intentional Issues)
+# ========================================
+data_quality:
+  inject_issues: true
+
+  duplicate_rate: 0.005 # 0.5% duplicate enrollment_ids
+  null_rate_optional: 0.02 # 2% nulls in optional fields
+  future_date_rate: 0.001 # 0.1% future dates (errors)
+  invalid_sequence_rate: 0.002 # 0.2% invalid milestone order
+
+  # Fields to inject nulls (optional fields only)
+  nullable_fields:
+    - hub_vendor
+    - payer_id
+    - payer_name
+    - inquiry_ts
+
+# ========================================
+# OUTPUT
+# ========================================
+output:
+  base_dir: data/raw_samples
+  format: parquet
+  compression: snappy
+  partitioning: monthly
+
+  # Optional CSV export for "file ingestion" story
+  export_csv: false
+  csv_dir: data/raw_samples_csv
+
+# ========================================
+# PHASE TOGGLES
+# ========================================
+phases:
+  phase1:
+    enabled: true
+    sources:
+      - psp_enrollments
+      - psp_cases
+      - psp_status_history
+      - specialty_pharmacy_shipments
+      - claims
+
+  phase2:
+    enabled: false # Set true to generate Phase 2 sources
+    sources:
+      - communications
+      - crm_interactions
+      - marketing_events
+      - copay_transactions
